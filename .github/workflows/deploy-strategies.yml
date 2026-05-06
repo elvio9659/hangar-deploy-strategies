@@ -1,0 +1,45 @@
+name: Operação Hangar - Deploy Strategies
+
+on:
+  push:
+    tags:
+      - 'v*' # Dispara o pipeline estritamente quando criamos uma tag de versão (ex: v1.0.0)
+
+jobs:
+  audit-and-simulate:
+    name: Inspeção de Voo e Validação de Estratégias
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter código do Hangar
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Traz todo o histórico de tags para análise
+
+      - name: Ler metadados da Tag Anotada
+        run: |
+          echo "=== EXAMINANDO CERTIFICADO DE VOO ==="
+          git show ${{ github.ref_name }} --quiet
+
+      - name: Validar Manifestos do Kubernetes
+        run: |
+          echo "Analisando consistência dos arquivos de infraestrutura da pasta /k8s..."
+          if [ ! -f k8s/service-router.yml ]; then
+            echo "ERRO CRÍTICO: Roteador de tráfego ausente!"
+            exit 1
+          fi
+          echo "Todos os manifestos válidos e estruturados!"
+
+      - name: Simulação de Deploy Seguro (Canary/Blue-Green)
+        run: |
+          TAG_ATUAL="${{ github.ref_name }}"
+          echo "Iniciando deploy estratégico para a versão: $TAG_ATUAL"
+          
+          if [ "$TAG_ATUAL" == "v2.1.0" ]; then
+             echo "🚨 ALERTA: Detectada anomalia crítica na telemetria da v2.1.0!"
+             echo "Iniciando procedimento automático de ABORTAR DEPLOY (Rollback)."
+             echo "Executando comando de reversão: git checkout v1.0.0"
+             echo "Sistema restaurado com sucesso para a versão de segurança anterior!"
+             exit 1
+          fi
+          
+          echo "Deploy concluído com sucesso e tráfego direcionado sem interrupções."

@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'v*' # Dispara o pipeline estritamente quando criamos uma tag de versão (ex: v1.0.0)
+      
+# 🔐 ADICIONE ESTAS LINHAS AQUI PARA LIBERAR O ROBÔ:
+permissions:
+  contents: write
+  actions: write
 
 jobs:
   audit-and-simulate:
@@ -34,17 +39,18 @@ jobs:
           TAG_ATUAL="${{ github.ref_name }}"
           echo "Iniciando deploy estratégico para a versão: $TAG_ATUAL"
           
+          # Configura as credenciais globais do robô logo no início
+          git config --global user.name "Hangar Copilot Bot"
+          git config --global user.email "copilot@hangar.com"
+          
           if [ "$TAG_ATUAL" == "v2.1.0" ]; then
              echo "🚨 ALERTA: Detectada anomalia crítica na telemetria da v2.1.0!"
              echo "🔥 Iniciando procedimento automático de ABORTAR DEPLOY (Rollback)."
              
-             # CORREÇÃO SEGURA: Garante que o arquivo volta para stable sem risco de zerar
+             # CORREÇÃO: Garante o retorno para estável
              cat k8s/service-router.yml | sed 's/version: candidate/version: stable/g' > k8s/service-router.tmp
              mv k8s/service-router.tmp k8s/service-router.yml
              
-             # Configura as credenciais do robô para commitar a correção de volta pro GitHub
-             git config --global user.name "Hangar Copilot Bot"
-             git config --global user.email "copilot@hangar.com"
              git add k8s/service-router.yml
              git commit -m "fix(rollback): força retorno para version: stable devido a falha na v2.1.0"
              git push origin main
@@ -53,23 +59,13 @@ jobs:
              exit 1
           fi
           
-          # Se for a v1.0.0, ela direciona o tráfego simulando a ida para staging/produção
+          # CENÁRIO SUCESSO (v1.0.0): Ele vira a chave e SALVA no GitHub
           echo "Virando a chave do Roteador para a nova versão candidata..."
           cat k8s/service-router.yml | sed 's/version: stable/version: candidate/g' > k8s/service-router.tmp
           mv k8s/service-router.tmp k8s/service-router.yml
-          echo "Deploy concluído com sucesso!"
-
-      - name: Simulação de Deploy Seguro (Canary/Blue-Green)
-        run: |
-          TAG_ATUAL="${{ github.ref_name }}"
-          echo "Iniciando deploy estratégico para a versão: $TAG_ATUAL"
           
-          if [ "$TAG_ATUAL" == "v2.1.0" ]; then
-             echo "🚨 ALERTA: Detectada anomalia crítica na telemetria da v2.1.0!"
-             echo "Iniciando procedimento automático de ABORTAR DEPLOY (Rollback)."
-             echo "Executando comando de reversão: git checkout v1.0.0"
-             echo "Sistema restaurado com sucesso para a versão de segurança anterior!"
-             exit 1
-          fi
+          git add k8s/service-router.yml
+          git commit -m "build(deploy): rota atualizada para version: candidate via tag v1.0.0"
+          git push origin main
           
-          echo "Deploy concluído com sucesso e tráfego direcionado sem interrupções."
+          echo "Deploy concluído com sucesso e gravado no repositório!"

@@ -18,7 +18,7 @@ jobs:
       - name: Obter código do Hangar
         uses: actions/checkout@v4
         with:
-           ref: main     # 👈 ISSO AQUI OBRIGA O ROBÔ A SE CONECTAR NA BRANCH MAIN
+          ref: main      # 👈 ISSO AQUI OBRIGA O ROBÔ A SE CONECTAR NA BRANCH MAIN
           fetch-depth: 0 # Traz todo o histórico de tags para análise
 
       - name: Ler metadados da Tag Anotada

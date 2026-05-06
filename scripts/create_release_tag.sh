@@ -17,9 +17,3 @@ git tag -a "$VERSION" -m "$DESCRICAO - Emitido por: $USER em $(date)"
 echo "Enviando Tag com segurança para a esteira de nuvem..."
 git push origin "$VERSION"
 echo "Tag $VERSION implantada com sucesso!"
-
-2.	Crie o arquivo scripts/manage_tags.sh para atuar como o nosso extrator de logs para Rollback:
-
-#!/bin/bash
-echo "=== LISTA DE HISTÓRICOS DE DEPLOYS DISPONÍVEIS PARA ROLLBACK ==="
-git tag -n
